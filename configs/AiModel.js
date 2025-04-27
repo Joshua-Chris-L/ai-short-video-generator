@@ -21,8 +21,7 @@ const config = {
 
 const model = 'gemini-1.5-flash';
 
-/* AIzaSyCdpJthu70iBlcpVJP2LOxVEUePqfoI1bw */
-/* AIzaSyCfEbOvJBiv8e9jnVrzLFGzxaa-yT_L9C4 */
+
 /**
  * Sends a prompt to Gemini and returns the full text response (non-streaming).
  * @param {string} prompt
