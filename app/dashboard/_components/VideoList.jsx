@@ -4,16 +4,18 @@ import RemotionVideo from "./RemotionVideo";
 import PlayerDialog from "./PlayerDialog";
 
 function VideoList({videoList} ) {
-    const [openPlayDialog, setOpenPlayerDialog] =useState(false)
+    const [openPlayDialog, setOpenPlayerDialog] =useState(true)
     const [videoId, setVideoId] = useState()
     return(
-        <div    className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10"> 
+        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-10"> 
             {videoList?.map((video, index)=> (
-                 <div 
+                 <div
                  key={video.id || index}
                  className="cursor-pointer 
                  hover:scale-105 transition-auto"
-                 onClick={()=> { setOpenPlayerDialog(Date.now()); setVideoId(video?.id)}  }
+                 onClick={()=> { setOpenPlayerDialog(Date.now()); setVideoId(video?.id)}  
+                    
+                }
                  
                  > 
                     <Thumbnail
@@ -34,9 +36,11 @@ function VideoList({videoList} ) {
                     />
                  </div>
             ))}
-            <PlayerDialog playVideo={openPlayDialog} videoId={videoId}/>
+             {openPlayDialog && videoId && (
+                <PlayerDialog playVideo={openPlayDialog} videoId={videoId} />
+            )}
         </div>
     )
 }
 
-export default VideoList
+export default VideoList 

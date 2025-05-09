@@ -13,37 +13,19 @@ import { db } from "@/configs/db";
 import { useUser } from "@clerk/nextjs";
 import { Users, VideoData } from "@/configs/schema";
 import PlayerDialog from "../_components/PlayerDialog";
-import { useRouter } from "next/navigation";
 import { UserDetailContext } from "@/app/_context/UserDetailContext";
 import { eq } from "drizzle-orm";
 import { toast } from "sonner";
 
-const VideoSCRIPT = [
-    {
-      "imagePrompt": "A cave painting depicting early hominids hunting mammoths, realistic style, vibrant colors",
-      "ContentText": "3-5 million years ago: The earliest hominids emerge in Africa, developing basic tools and hunting in groups."
-    },
-    {
-      "imagePrompt": "A bustling Neolithic village with people farming and building structures, warm lighting, detailed scene",
-      "ContentText": "10,000 BC: The Neolithic Revolution – agriculture and settled life lead to population growth and the development of villages."
-    }
-  ]
-const scriptData = `Once upon a time, in a land far away... 
-    There lived a princess named Lucy who loved adventure. One day, she decided to go on a quest to find 
-    a magical flower. On her journey she encountered a fearsome dragon guarding the flower. But with courage and kindness, 
-    she befriended the dragon. Together they shared the flower's magic. And Lucy, with a heart full of joy, fell fast asleep.
-    The End `
-const FILEURL = 'https://firebasestorage.googleapis.com/v0/b/newp-f68bc.firebasestorage.app/o/ai-short-videos-files%2F02ebfe6f-af34-4b91-9331-00d9792ef9be.mp3?alt=media&token=073d23c8-6035-4cf3-bf63-5e3790d5378b'
 function CreateNew() {
 
-
-    const [formData, setFormData] = useState([]);
+    const [formData, setFormData] = useState({});
     const [loading, setLoading] = useState(false)
     const [videoScript, setVideoScript] = useState()
     const [audioFileUrl, setAudioFileUrl] = useState()
     const [captions, setCaptions] = useState()
     const [imageList, setImageList]=useState()
-    const [playVideo, setPlayVideo] = useState(true)
+    const [playVideo, setPlayVideo] = useState(false)
     const [videoId, setVideoId] = useState()
     const {videoData, setVideoData} = useContext(VideoDataContext)
     const {userDetail, setUserDetail} = useContext(UserDetailContext)
@@ -85,7 +67,6 @@ function CreateNew() {
                 ...prev,
                 'videoScript':resp.data.result
             }))
-            console.log(resp.data.result)
             setVideoScript(resp.data.result)
             resp.data.result && await GenerateAudioFile(resp.data.result)
        }
@@ -110,7 +91,7 @@ function CreateNew() {
             'audioFileUrl':resp.data.Result
         }))
         // setAudioFileUrl(resp.data.Result)
-       resp.data.Result&&GenerateAudioCaption(resp.data.Result, videoScriptData)
+       resp.data.Result && await GenerateAudioCaption(resp.data.Result, videoScriptData)
     }
 
     //Used to generate Caption from audio file
@@ -128,10 +109,24 @@ function CreateNew() {
     }  
 
     // Used to generate Ai Images real is videoScript from useState above 
-   const GenerateImage = async(videoScriptData)=> {
+    const GenerateImage = async (videoScriptData) => {
+        const dynamicKey = Object.keys(videoScriptData)[0];
+        const imagePromises = videoScriptData[dynamicKey].map(scene =>
+          axios.post('/api/generate-image', { prompt: scene.ImagePrompt })
+        );
+      
+        const responses = await Promise.all(imagePromises);
+        const images = responses.map(res => res.data.result);
+      
+        setVideoData(prev => ({
+          ...prev,
+          imageList: images
+        }));
+      };
+ /*   const GenerateImage = async(videoScriptData)=> {
     let images = []
     const dynamicKey = Object.keys(videoScriptData)[0]
-    videoScriptData[dynamicKey].forEach( async(scene) => {
+    videoScriptData[dynamicKey].forEach(async(scene) => {
         const resp= await axios.post('/api/generate-image', {
             prompt:scene.ImagePrompt
         })
@@ -142,11 +137,10 @@ function CreateNew() {
          }))  
      })  
    
-    }
+    } */
 
     useEffect(()=> {
-        console.log(videoData)
-        if (Object.keys(videoData).length==4){
+        if (videoData && Object.keys(videoData).length==4){
             SaveVideoData(videoData);
         }
     }, [videoData])
@@ -160,7 +154,7 @@ function CreateNew() {
             imageList:videoData?.imageList,
             createdBy:user?.primaryEmailAddress?.emailAddress
         }).returning({id: VideoData?.id })
-        //console.log(result)
+
         await UpdateUserCredits()
         setVideoId(result[0].id)
         setPlayVideo(true)
@@ -173,12 +167,12 @@ function CreateNew() {
             credits:userDetail?.credits-10
         }).where(eq(Users?.email, user?.primaryEmailAddress?.emailAddress))
 
-        console.log(result)
-
         setUserDetail(prev =>({
              ...prev,
              "credits": userDetail?.credits-10
         }))
+
+        setVideoData(null);
     }
     
     return (
@@ -195,8 +189,10 @@ function CreateNew() {
                 <Button className='mt-10 w-full' onClick={onCreateClickHandler}> Create Short Video </Button>
             </div>
 
-            <CustomLoading loading={loading} />
-            <PlayerDialog playVideo={playVideo} videoId={videoId} />
+            {/* <CustomLoading loading={loading} /> */}
+            {playVideo && videoId && (
+                <PlayerDialog playVideo={playVideo} videoId={videoId} />
+            )}
         </div> 
     )
 }

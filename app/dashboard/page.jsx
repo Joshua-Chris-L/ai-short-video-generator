@@ -24,14 +24,14 @@ function Dashboard() {
         const result = await db.select().from(VideoData)
         .where(eq(VideoData?.createdBy, user?.primaryEmailAddress?.emailAddress ))
 
-        console.log(result)
+        //console.log(result)
         setVideoList(result)
     }
     return (
         <div>  
             <div className="flex justify-between item-center"> 
                 <h2 className="font-bold text-2xl text-primary"> Dashboard </h2>
-                <Link href={'dashboard/create-new '}>
+                <Link href={'dashboard/create-new'}>
                     <Button > +Create new </Button>
                 </Link>
             </div>
